@@ -10,121 +10,113 @@ from peewee import (
 )
 import datetime
 
-#database
+# Configuración de la base de datos PostgreSQL
 db_config = {
-    "host": "localhost",
-    "port": 5432,
-    "user": "postgres",
-    "password": "postgres",
-    "database": "iot_db",
+    "host": "localhost",      # Host de la base de datos
+    "port": 5432,            # Puerto de conexión
+    "user": "postgres",       # Usuario de la base de datos
+    "password": "postgres",  # Contraseña del usuario
+    "database": "iot_db",    # Nombre de la base de datos
 }
 
+# Crear instancia de la base de datos
 db = PostgresqlDatabase(**db_config)
 
 def set_search_path():
+    """Establece el esquema de búsqueda en la base de datos"""
     db.execute_sql("SET search_path TO ble_db;")
 
 class BaseModel(Model):
+    """Modelo base que heredarán todos los demás modelos"""
     class Meta:
-        database = db
+        database = db  # Asocia todos los modelos con esta base de datos
 
-#modelos
+# Definición de modelos de la base de datos
 class Configuration(BaseModel):
-    Id_device = CharField(max_length=45, null=True)
-    Status_conf = IntegerField(null=True)
-    Protocol_conf = IntegerField(null=True)
-    Acc_sampling = IntegerField(null=True)
-    Acc_sensibility = IntegerField(null=True)
-    Gyro_sensibility = IntegerField(null=True)
-    BME688_sampling = IntegerField(null=True)
-    Discontinuos_time = IntegerField(null=True)
-    TCP_PORT = IntegerField(null=True)
-    UDP_port = IntegerField(null=True)
-    Host_ip_addr = IntegerField(null=True)
-    Ssid = CharField(max_length=45, null=True)
-    Pass = CharField(max_length=45, null=True)
+    """Modelo para la tabla de configuración de dispositivos"""
+    Id_device = CharField(max_length=45, null=True)         # ID del dispositivo
+    Status_conf = IntegerField(null=True)                   # Estado de configuración
+    Protocol_conf = IntegerField(null=True)                 # Protocolo usado
+    Acc_sampling = IntegerField(null=True)                  # Frecuencia de muestreo acelerómetro
+    Acc_sensibility = IntegerField(null=True)              # Sensibilidad del acelerómetro
+    Gyro_sensibility = IntegerField(null=True)             # Sensibilidad del giroscopio
+    BME688_sampling = IntegerField(null=True)              # Frecuencia de muestreo sensor BME688
+    Discontinuos_time = IntegerField(null=True)            # Tiempo de operación discontinua
+    TCP_PORT = IntegerField(null=True)                     # Puerto TCP
+    UDP_port = IntegerField(null=True)                     # Puerto UDP
+    Host_ip_addr = IntegerField(null=True)                 # Dirección IP del host
+    Ssid = CharField(max_length=45, null=True)             # SSID de red WiFi
+    Pass = CharField(max_length=45, null=True)             # Contraseña de red WiFi
 
 class Log(BaseModel):
-    log_id = AutoField()
-    Id_device = CharField(max_length=45, null=True)
-    Status_report = IntegerField(null=True)
-    Protocol_report = IntegerField(null=True)
-    Battery_Level = IntegerField(null=True)
-    Conf_peripheral = IntegerField(null=True)
-    Time_client = DateTimeField(null=True)
-    Time_server = IntegerField(null=True)
+    """Modelo para la tabla de logs de dispositivos"""
+    log_id = AutoField()                                   # ID autoincremental del log
+    Id_device = CharField(max_length=45, null=True)        # ID del dispositivo
+    Status_report = IntegerField(null=True)                # Estado del reporte
+    Protocol_report = IntegerField(null=True)              # Protocolo del reporte
+    Battery_Level = IntegerField(null=True)                # Nivel de batería
+    Conf_peripheral = IntegerField(null=True)              # Configuración de periféricos
+    Time_client = DateTimeField(null=True)                 # Hora del cliente
+    Time_server = IntegerField(null=True)                  # Hora del servidor
     configuration_Id_device = ForeignKeyField(
-        Configuration, backref="logs", on_delete="NO ACTION", on_update="NO ACTION"
-    )
-
-
-
-
-
+        Configuration, 
+        backref="logs", 
+        on_delete="NO ACTION", 
+        on_update="NO ACTION"
+    )  # Relación con la tabla Configuration
 
 class Data_1(BaseModel):
-    data_1_id = AutoField()
-    Id_device = CharField(max_length=45, null=True)
-    Battery_level = IntegerField(null=True)
-    TimeStamp = IntegerField(null=True)
-    Temperature = IntegerField(null=True)
-    Press = IntegerField(null=True)
-    Hum = IntegerField(null=True)
-    Co = FloatField(null=True)
-    RMS = FloatField(null=True)
-    Amp_x = FloatField(null=True)
-    Freq_x = FloatField(null=True)
-    Amp_y = FloatField(null=True)
-    Freq_y = FloatField(null=True)
-    Amp_z = FloatField(null=True)
-    Freq_z = FloatField(null=True)
-    Time_client = DateTimeField(null=True)
+    """Modelo para la primera tabla de datos de sensores"""
+    data_1_id = AutoField()                               # ID autoincremental
+    Id_device = CharField(max_length=45, null=True)        # ID del dispositivo
+    Battery_level = IntegerField(null=True)                # Nivel de batería
+    TimeStamp = IntegerField(null=True)                    # Marca de tiempo
+    Temperature = IntegerField(null=True)                  # Temperatura
+    Press = IntegerField(null=True)                        # Presión
+    Hum = IntegerField(null=True)                          # Humedad
+    Co = FloatField(null=True)                             # Monóxido de carbono
+    RMS = FloatField(null=True)                            # Valor RMS
+    Amp_x = FloatField(null=True)                          # Amplitud en eje X
+    Freq_x = FloatField(null=True)                         # Frecuencia en eje X
+    Amp_y = FloatField(null=True)                          # Amplitud en eje Y
+    Freq_y = FloatField(null=True)                         # Frecuencia en eje Y
+    Amp_z = FloatField(null=True)                          # Amplitud en eje Z
+    Freq_z = FloatField(null=True)                         # Frecuencia en eje Z
+    Time_client = DateTimeField(null=True)                 # Hora del cliente
     Log_Id_device = ForeignKeyField(
-        Log, backref="data_1", on_delete="NO ACTION", on_update="NO ACTION"
-
-    )
-
-
-
-
-
-
-
+        Log, 
+        backref="data_1", 
+        on_delete="NO ACTION", 
+        on_update="NO ACTION"
+    )  # Relación con la tabla Log
 
 class Data_2(BaseModel):
-    Id_device = CharField(max_length=45, null=True)
-    Racc_x = FloatField(null=True)
-    Racc_y = FloatField(null=True)
-    Racc_z = FloatField(null=True)
-    Rgyr_x = FloatField(null=True)
-    Rgyr_y = FloatField(null=True)
-    Rgyr_z = FloatField(null=True)
-    Time_client = DateTimeField(null=True)
+    """Modelo para la segunda tabla de datos de sensores"""
+    Id_device = CharField(max_length=45, null=True)        # ID del dispositivo
+    Racc_x = FloatField(null=True)                         # Aceleración rotacional en X
+    Racc_y = FloatField(null=True)                         # Aceleración rotacional en Y
+    Racc_z = FloatField(null=True)                         # Aceleración rotacional en Z
+    Rgyr_x = FloatField(null=True)                         # Giroscopio en X
+    Rgyr_y = FloatField(null=True)                         # Giroscopio en Y
+    Rgyr_z = FloatField(null=True)                         # Giroscopio en Z
+    Time_client = DateTimeField(null=True)                 # Hora del cliente
     Log_Id_device = ForeignKeyField(
-        Log, backref="data_2", on_delete="NO ACTION", on_update="NO ACTION"
-    )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        Log, 
+        backref="data_2", 
+        on_delete="NO ACTION", 
+        on_update="NO ACTION"
+    )  # Relación con la tabla Log
 
 def add_data_1_to_db(datos_data: list, log_data: list):
+    """Función para agregar datos a la tabla Data_1 y Log"""
     try:
         set_search_path()
 
-        #configuration_Id_device existe, sino, crea una
+        # Verifica si existe la configuración del dispositivo, si no, la crea
         config_exists, created = Configuration.get_or_create(Id_device=log_data[7])
-        with db.atomic():
+        
+        with db.atomic():  # Transacción atómica
+            # Crear entrada en el log
             log_entry = Log.create(
                 Id_device=log_data[0],
                 Status_report=log_data[1],
@@ -135,6 +127,8 @@ def add_data_1_to_db(datos_data: list, log_data: list):
                 Time_server=log_data[6],
                 configuration_Id_device=log_data[7],
             )
+            
+            # Crear entrada en Data_1
             Data_1.create(
                 Id_device=log_data[0],
                 Battery_level=int(datos_data[0]) if datos_data[0] is not None else None,
@@ -153,29 +147,18 @@ def add_data_1_to_db(datos_data: list, log_data: list):
                 Time_client=log_data[5],  
                 Log_Id_device=log_entry.log_id,
             )
-            print("Data inserted successfully")
+            print("Datos insertados exitosamente")
 
     except Exception as error:
-        print("Error adding data to the database:", error)
-
-
-
-
-
-
-
-
-
-
-
-
-
+        print("Error al agregar datos a la base de datos:", error)
 
 def add_data_2_to_db(datos_data: list, log_data: list):
+    """Función para agregar datos a la tabla Data_2 y Log"""
     try:
         set_search_path()
 
-        with db.atomic():
+        with db.atomic():  # Transacción atómica
+            # Crear entrada en el log
             log = Log.create(
                 Id_device=log_data[0],
                 Status_report=log_data[1],
@@ -187,6 +170,7 @@ def add_data_2_to_db(datos_data: list, log_data: list):
                 configuration_Id_device=log_data[7],
             )
 
+            # Crear entrada en Data_2
             datos = Data_2.create(
                 Id_device=datos_data[0],
                 Racc_x=datos_data[1],
@@ -200,35 +184,21 @@ def add_data_2_to_db(datos_data: list, log_data: list):
             )
 
     except Exception as error:
-        print("Error adding data to the database:", error)
-
-
-
-
-
-
-
+        print("Error al agregar datos a la base de datos:", error)
 
 def get_conf() -> list:
+    """Obtiene todas las configuraciones de la base de datos"""
     set_search_path()
     query = Configuration.select()
     values = []
     for row in query:
         for e in row:
             values.append(e)
-    values = values[1::]  
+    values = values[1::]  # Elimina el primer elemento (id interno)
     return values
 
-
-
-
-
-
-
-
-
-
 def update_conf(conf_data: list):
+    """Actualiza la configuración en la base de datos"""
     set_search_path()
     query = Configuration.update(
         Id_device=conf_data[0],
@@ -246,39 +216,39 @@ def update_conf(conf_data: list):
         Pass=conf_data[12],
     )
 
-
-
-
-#funcion para hacer las consultas para los graficos , cuando exiten valores none los cambia por 0. 
 def fetch_attribute_values(attribute):
+    """
+    Obtiene valores de un atributo específico de Data_1 para gráficos.
+    Reemplaza valores None por 0.
+    """
     set_search_path()
     query = Data_1.select(getattr(Data_1, attribute)).execute()
     values = [getattr(data, attribute) for data in query]
-    #reemplazar valores None por 0
+    # Reemplazar valores None por 0
     values = [0 if value is None else value for value in values]
 
-    #generar datos x como índices de los valores y
+    # Generar datos x como índices de los valores y
     x_values = list(range(len(values)))
     data_dict = {'x': x_values, 'y': values}
 
     return data_dict
 
-
 if __name__ == "__main__":
+    #Conexión y pruebas básicas
     db.connect()
     set_search_path()
 
-    #crea las tablas
+    # Crear las tablas si no existen
     db.create_tables([Configuration, Log, Data_1, Data_2])
 
-    #test
+    #Obtener configuración de dispositivo
     config = Configuration.get_or_none(Configuration.Id_device == 1)
     if config:
-        print(f"Configuration for device {config.Id_device}: SSID = {config.Ssid}")
+        print(f"Configuración para dispositivo {config.Id_device}: SSID = {config.Ssid}")
 
-
+    #Obtener valores de atributo para gráficos
     attribute = 'Battery_level'
     attribute_values = fetch_attribute_values(attribute)
-    print(f"Values of '{attribute}' attribute: {attribute_values}")
+    print(f"Valores del atributo '{attribute}': {attribute_values}")
 
     db.close()

@@ -8,30 +8,25 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <string.h>
 #include <time.h>
 #include <stdbool.h>
-
 #include "esp_sleep.h"
 #include "esp_mac.h"
 #include "generateRandom.h"
 #include "config.h"
 #include "nvs.h"
-
 #include "esp_bt_defs.h"
 #include "esp_bt_device.h"
 #include "esp_bt_main.h"
 #include "esp_gap_ble_api.h"
 #include "esp_gatt_common_api.h"
 #include "esp_gatts_api.h"
-
 #include "sdkconfig.h"
 
 #define GATTS_TAG "GATTS_DEMO"
 #define CLIENT_CONNECTED_BIT BIT0
 #define CLIENT_WRITING_READING_BIT BIT1
-
 
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                                           esp_gatt_if_t gatts_if,
@@ -51,7 +46,6 @@ typedef struct
 
 static Config config_instance; 
 static uint8_t *pMessage;     
-
 static EventGroupHandle_t client_connected;
 static EventGroupHandle_t client_writing_reading;
 
@@ -69,17 +63,13 @@ static bool stop_config = false;
 #define GATTS_CHAR_UUID_TEST_A 0xFF01
 #define GATTS_DESCR_UUID_TEST_A 0x3333
 #define GATTS_NUM_HANDLE_TEST_A 4
-
 #define GATTS_SERVICE_UUID_TEST_B 0x00EE
 #define GATTS_CHAR_UUID_TEST_B 0xEE01
 #define GATTS_DESCR_UUID_TEST_B 0x2222
 #define GATTS_NUM_HANDLE_TEST_B 4
-
 #define TEST_DEVICE_NAME "ESP_GATTS_DEMO"
 #define TEST_MANUFACTURER_DATA_LEN 17
-
 #define GATTS_DEMO_CHAR_VAL_LEN_MAX 0x40
-
 #define PREPARE_BUF_MAX_SIZE 1024
 
 static uint8_t char1_str[] = {0x11, 0x22, 0x33};
@@ -98,76 +88,26 @@ static uint8_t adv_config_done = 0;
 
 #ifdef CONFIG_SET_RAW_ADV_DATA
 static uint8_t raw_adv_data[] = {
-    0x02,
-    0x01,
-    0x06, 
-          
-    0x02,
-    0x0a,
-    0xeb, 
-    0x03,
-    0x03,
-    0xab,
-    0xcd, 
-          
+    0x02, 0x01, 0x06, 
+    0x02, 0x0a, 0xeb, 
+    0x03, 0x03, 0xab, 0xcd, 
 };
 static uint8_t raw_scan_rsp_data[] =
-    { 
-        0x0f, 0x09, 0x45, 0x53, 0x50, 0x5f, 0x47, 0x41,
-        0x54, 0x54, 0x53, 0x5f, 0x44, 0x45, 0x4d, 0x4f};
+    {0x0f, 0x09, 0x45, 0x53, 0x50, 0x5f, 0x47, 0x41,
+     0x54, 0x54, 0x53, 0x5f, 0x44, 0x45, 0x4d, 0x4f};
 #else
-
 static uint8_t adv_service_uuid128[32] = {
-    /* LSB
-       <-------------------------------------------------------------------------------->
-       MSB */
-    
-    0xfb,
-    0x34,
-    0x9b,
-    0x5f,
-    0x80,
-    0x00,
-    0x00,
-    0x80,
-    0x00,
-    0x10,
-    0x00,
-    0x00,
-    0xEE,
-    0x00,
-    0x00,
-    0x00,
-    
-    0xfb,
-    0x34,
-    0x9b,
-    0x5f,
-    0x80,
-    0x00,
-    0x00,
-    0x80,
-    0x00,
-    0x10,
-    0x00,
-    0x00,
-    0xFF,
-    0x00,
-    0x00,
-    0x00,
+    0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
+    0x00, 0x10, 0x00, 0x00, 0xEE, 0x00, 0x00, 0x00,
+    0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
+    0x00, 0x10, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00,
 };
-
-
-
-
 static esp_ble_adv_data_t adv_data = {
     .set_scan_rsp = false,
     .include_name = true,
     .include_txpower = false,
     .min_interval = 0x0006, 
-                            
     .max_interval = 0x0010, 
-                            
     .appearance = 0x00,
     .manufacturer_len = 0,       
     .p_manufacturer_data = NULL, 
@@ -177,13 +117,10 @@ static esp_ble_adv_data_t adv_data = {
     .p_service_uuid = adv_service_uuid128,
     .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };
-
 static esp_ble_adv_data_t scan_rsp_data = {
     .set_scan_rsp = true,
     .include_name = true,
     .include_txpower = true,
-    
-    
     .appearance = 0x00,
     .manufacturer_len = 0,       
     .p_manufacturer_data = NULL, 
@@ -193,7 +130,6 @@ static esp_ble_adv_data_t scan_rsp_data = {
     .p_service_uuid = adv_service_uuid128,
     .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };
-
 #endif /* CONFIG_SET_RAW_ADV_DATA */
 
 static esp_ble_adv_params_t adv_params = {
@@ -201,8 +137,6 @@ static esp_ble_adv_params_t adv_params = {
     .adv_int_max = 0x40,
     .adv_type = ADV_TYPE_IND,
     .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
-    
-    
     .channel_map = ADV_CHNL_ALL,
     .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
@@ -227,23 +161,15 @@ struct gatts_profile_inst
     esp_bt_uuid_t descr_uuid;
 };
 
-/* One gatt-based profile one app_id and one gatts_if, this array will store the
- * gatts_if returned by ESP_GATTS_REG_EVT */
 static struct gatts_profile_inst gl_profile_tab[PROFILE_NUM] = {
-    [PROFILE_A_APP_ID] =
-        {
-            .gatts_cb = gatts_profile_a_event_handler,
-            .gatts_if = ESP_GATT_IF_NONE, /* Not get the gatt_if, so initial is
-                                             ESP_GATT_IF_NONE */
-        },
-    [PROFILE_B_APP_ID] =
-        {
-            .gatts_cb =
-                gatts_profile_b_event_handler, /* This demo does not implement,
-                                                  similar as profile A */
-            .gatts_if = ESP_GATT_IF_NONE,      /* Not get the gatt_if, so initial is
-                                                  ESP_GATT_IF_NONE */
-        },
+    [PROFILE_A_APP_ID] = {
+        .gatts_cb = gatts_profile_a_event_handler,
+        .gatts_if = ESP_GATT_IF_NONE,
+    },
+    [PROFILE_B_APP_ID] = {
+        .gatts_cb = gatts_profile_b_event_handler,
+        .gatts_if = ESP_GATT_IF_NONE,
+    },
 };
 
 typedef struct
@@ -298,8 +224,6 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event,
         break;
 #endif
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
-        
-        
         if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS)
         {
             ESP_LOGE(GATTS_TAG, "Advertising start failed");
@@ -341,10 +265,8 @@ void example_write_event_env(esp_gatt_if_t gatts_if,
                              esp_ble_gatts_cb_param_t *param)
 {
     esp_gatt_status_t status = ESP_GATT_OK;
-
     if (param->write.need_rsp)
     {
-
         if (param->write.is_prep)
         {
             if (param->write.offset > PREPARE_BUF_MAX_SIZE)
@@ -367,7 +289,6 @@ void example_write_event_env(esp_gatt_if_t gatts_if,
                     status = ESP_GATT_NO_RESOURCES;
                 }
             }
-
             esp_gatt_rsp_t *gatt_rsp =
                 (esp_gatt_rsp_t *)malloc(sizeof(esp_gatt_rsp_t));
             if (gatt_rsp)
@@ -397,7 +318,6 @@ void example_write_event_env(esp_gatt_if_t gatts_if,
             {
                 return;
             }
-
             memcpy(prepare_write_env->prepare_buf + param->write.offset,
                    param->write.value, param->write.len);
             prepare_write_env->prepare_len += param->write.len;
@@ -406,17 +326,13 @@ void example_write_event_env(esp_gatt_if_t gatts_if,
         {
             esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
                                         param->write.trans_id, status, NULL);
-            
             if (i == 0)
             {
                 i += 1;
                 return;
             }
-            
             xEventGroupSetBits(client_writing_reading, CLIENT_WRITING_READING_BIT);
-            
             stop_config = true;
-            
             int offset = 0;
             mempcpy(&config_instance.status, param->write.value + offset, 1);
             offset += 1;
@@ -441,10 +357,7 @@ void example_write_event_env(esp_gatt_if_t gatts_if,
             mempcpy(&config_instance.Ssid, param->write.value + offset, 10);
             offset += 10;
             mempcpy(&config_instance.Pass, param->write.value + offset, 10);
-
-            
             save_nvs();
-            
             xEventGroupClearBits(client_writing_reading, CLIENT_WRITING_READING_BIT);
         }
     }
@@ -484,7 +397,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.len = ESP_UUID_LEN_16;
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.uuid.uuid16 =
             GATTS_SERVICE_UUID_TEST_A;
-
         esp_err_t set_dev_name_ret = esp_ble_gap_set_device_name(TEST_DEVICE_NAME);
         if (set_dev_name_ret)
         {
@@ -509,14 +421,12 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
         }
         adv_config_done |= scan_rsp_config_flag;
 #else
-        
         esp_err_t ret = esp_ble_gap_config_adv_data(&adv_data);
         if (ret)
         {
             ESP_LOGE(GATTS_TAG, "config adv data failed, error code = %x", ret);
         }
         adv_config_done |= adv_config_flag;
-        
         ret = esp_ble_gap_config_adv_data(&scan_rsp_data);
         if (ret)
         {
@@ -524,7 +434,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                      ret);
         }
         adv_config_done |= scan_rsp_config_flag;
-
 #endif
         esp_ble_gatts_create_service(gatts_if,
                                      &gl_profile_tab[PROFILE_A_APP_ID].service_id,
@@ -570,7 +479,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                         {
                             notify_data[i] = i % 0xff;
                         }
-                        
                         esp_ble_gatts_send_indicate(
                             gatts_if, param->write.conn_id,
                             gl_profile_tab[PROFILE_A_APP_ID].char_handle,
@@ -587,7 +495,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                         {
                             indicate_data[i] = i % 0xff;
                         }
-                        
                         esp_ble_gatts_send_indicate(
                             gatts_if, param->write.conn_id,
                             gl_profile_tab[PROFILE_A_APP_ID].char_handle,
@@ -627,7 +534,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
         gl_profile_tab[PROFILE_A_APP_ID].char_uuid.len = ESP_UUID_LEN_16;
         gl_profile_tab[PROFILE_A_APP_ID].char_uuid.uuid.uuid16 =
             GATTS_CHAR_UUID_TEST_A;
-
         esp_ble_gatts_start_service(
             gl_profile_tab[PROFILE_A_APP_ID].service_handle);
         a_property = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE |
@@ -648,7 +554,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
     {
         uint16_t length = 0;
         const uint8_t *prf_char;
-
         ESP_LOGI(GATTS_TAG,
                  "ADD_CHAR_EVT, status %d,  attr_handle %d, service_handle %d",
                  param->add_char.status, param->add_char.attr_handle,
@@ -663,7 +568,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
         {
             ESP_LOGE(GATTS_TAG, "ILLEGAL HANDLE");
         }
-
         ESP_LOGI(GATTS_TAG, "the gatts demo char length = %x", length);
         for (int i = 0; i < length; i++)
         {
@@ -700,8 +604,6 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
     {
         esp_ble_conn_update_params_t conn_params = {0};
         memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
-        /* For the IOS system, please reference the apple official documents about
-         * the ble connection parameters restrictions. */
         conn_params.latency = 0;
         conn_params.max_int = 0x20; 
         conn_params.min_int = 0x10; 
@@ -714,16 +616,13 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                  param->connect.remote_bda[3], param->connect.remote_bda[4],
                  param->connect.remote_bda[5]);
         gl_profile_tab[PROFILE_A_APP_ID].conn_id = param->connect.conn_id;
-        
         xEventGroupSetBits(client_connected, CLIENT_CONNECTED_BIT);
-        
         esp_ble_gap_update_conn_params(&conn_params);
         break;
     }
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGI(GATTS_TAG, "ESP_GATTS_DISCONNECT_EVT, disconnect reason 0x%x",
                  param->disconnect.reason);
-        
         xEventGroupClearBits(client_connected, CLIENT_CONNECTED_BIT);
         esp_ble_gap_start_advertising(&adv_params);
         break;
@@ -749,14 +648,12 @@ static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event,
                                           esp_gatt_if_t gatts_if,
                                           esp_ble_gatts_cb_param_t *param)
 {
-
 }
 
 static void gatts_event_handler(esp_gatts_cb_event_t event,
                                 esp_gatt_if_t gatts_if,
                                 esp_ble_gatts_cb_param_t *param)
 {
-    /* If event is register event, store the gatts_if for each profile */
     if (event == ESP_GATTS_REG_EVT)
     {
         if (param->reg.status == ESP_GATT_OK)
@@ -770,17 +667,12 @@ static void gatts_event_handler(esp_gatts_cb_event_t event,
             return;
         }
     }
-
-    /* If the gatts_if equal to profile A, call profile A cb handler,
-     * so here call each profile's callback */
     do
     {
         int idx;
         for (idx = 0; idx < PROFILE_NUM; idx++)
         {
-            if (gatts_if == ESP_GATT_IF_NONE || /* ESP_GATT_IF_NONE, not specify a
-                                                   certain gatt_if, need to call every
-                                                   profile cb function */
+            if (gatts_if == ESP_GATT_IF_NONE ||
                 gatts_if == gl_profile_tab[idx].gatts_if)
             {
                 if (gl_profile_tab[idx].gatts_cb)
@@ -795,8 +687,6 @@ static void gatts_event_handler(esp_gatts_cb_event_t event,
 void app_main(void)
 {
     esp_err_t ret;
-
-    
     ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
         ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
@@ -805,9 +695,7 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
-
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret)
@@ -816,7 +704,6 @@ void app_main(void)
                  esp_err_to_name(ret));
         return;
     }
-
     ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
     if (ret)
     {
@@ -824,7 +711,6 @@ void app_main(void)
                  esp_err_to_name(ret));
         return;
     }
-
     ret = esp_bluedroid_init();
     if (ret)
     {
@@ -839,7 +725,6 @@ void app_main(void)
                  esp_err_to_name(ret));
         return;
     }
-
     ret = esp_ble_gatts_register_callback(gatts_event_handler);
     if (ret)
     {
@@ -870,15 +755,10 @@ void app_main(void)
         ESP_LOGE(GATTS_TAG, "set local  MTU failed, error code = %x",
                  local_mtu_ret);
     }
-
     client_connected = xEventGroupCreate();
     client_writing_reading = xEventGroupCreate();
-
-    
     esp_ble_gatts_register_callback(gatts_event_handler);
-
     xTaskCreate(&task, "main_task", 2048, NULL, 5, NULL);
-
     return;
 }
 
@@ -891,7 +771,6 @@ void request_config()
         gl_profile_tab[PROFILE_A_APP_ID].conn_id,
         gl_profile_tab[PROFILE_A_APP_ID].char_handle,
         len, (uint8_t *)message, false);
-
     if (err != ESP_OK)
     {
         ESP_LOGE(GATTS_TAG, "Failed to send indicate: %s", esp_err_to_name(err));
@@ -900,7 +779,6 @@ void request_config()
 
 void add_mac(Header *header_instance)
 {
-    
     esp_err_t result = esp_read_mac(header_instance->mac, ESP_MAC_BT);
     if (result != ESP_OK)
     {
@@ -912,14 +790,9 @@ void add_mac(Header *header_instance)
 void make_header(Header *header_instance)
 {
     srand(time(NULL));
-    
     header_instance->id = generateId();
-
-    
     header_instance->transport_layer = config_instance.status;
     header_instance->id_protocol = config_instance.ID_Protocol;
-
-    
     switch (header_instance->id_protocol)
     {
     case 1:
@@ -942,10 +815,7 @@ void generate_message(Header *header_instance, uint8_t *message)
 {
 #define HEADER_SIZE 12
     int offset = 0;
-    
     srand(time(NULL));
-
-    
     memcpy(message + offset, &header_instance->id, 2);
     offset += 2;
     memcpy(message + offset, &header_instance->mac, 6);
@@ -956,28 +826,18 @@ void generate_message(Header *header_instance, uint8_t *message)
     offset += 1;
     memcpy(message + offset, &header_instance->length, 2);
     offset += 2;
-
-    
     offset = HEADER_SIZE;
     printf("------------------------------------------------------------\n");
-
-    
     unsigned char batt = generateBatteryLevel();
     memcpy(message + offset, &batt, 1);
     offset += 1;
     printf("batt: %d\n", batt);
-
     time_t current_time = time(NULL);
-    
     uint32_t timeStamp = (uint32_t)current_time;
-    
     memcpy(message + offset, &timeStamp, 4);
     offset += 4;
-    
     printf("timestamp: %" PRIu32 "\n", timeStamp);
-
     int protocol = header_instance->id_protocol;
-    
     if (protocol > 1)
     {
         int temperature = generateTemperature();
@@ -997,7 +857,6 @@ void generate_message(Header *header_instance, uint8_t *message)
         offset += 4;
         printf("co: %d\n", co);
     }
-    
     if (protocol > 2)
     {
         float ampx = generateAmpx();
@@ -1008,7 +867,6 @@ void generate_message(Header *header_instance, uint8_t *message)
         offset += 4;
         printf("rms: %f\n", rms);
     }
-    
     if (protocol > 3)
     {
         float ampx = generateAmpx();
@@ -1017,7 +875,6 @@ void generate_message(Header *header_instance, uint8_t *message)
         float freqy = generateFreqy();
         float ampz = generateAmpz();
         float freqz = generateFreqz();
-        
         memcpy(message + offset, &ampx, 4);
         offset += 4;
         printf("ampx: %f\n", ampx);
@@ -1040,7 +897,6 @@ void generate_message(Header *header_instance, uint8_t *message)
     printf("------------------------------------------------------------\n");
 }
 
-
 void save_nvs()
 {
     Write_NVS_int(config_instance.status, 1);
@@ -1056,7 +912,6 @@ void save_nvs()
     Write_NVS_string(config_instance.Ssid, 11);
     Write_NVS_string(config_instance.Pass, 12);
 }
-
 
 void load_nvs()
 {
@@ -1079,25 +934,17 @@ void load_nvs()
 
 void task(void *param)
 {
-    
     Header header_instance;
     add_mac(&header_instance);
-
-    
     while (1)
     {
         printf("Esperando conexión...\n");
-        
         xEventGroupWaitBits(client_connected, CLIENT_CONNECTED_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
         ESP_LOGI("NOTIFY_TASK", "Connected to a BLE client, starting notifications.");
         printf("Cliente conectado\n");
-
-        
         while (xEventGroupGetBits(client_connected) & CLIENT_CONNECTED_BIT)
         {
-            
             load_nvs();
-
             printf("------------------------------------------------------------\n");
             printf("Data inicial:\n");
             printf("%" PRId32 "\n", config_instance.status);
@@ -1113,12 +960,9 @@ void task(void *param)
             printf("%s\n", config_instance.Ssid);
             printf("%s\n", config_instance.Pass);
             printf("------------------------------------------------------------\n");
-
             config_instance.status = 0; 
-            
             if (config_instance.status == 0)
             {
-                
                 while (!stop_config && (xEventGroupGetBits(client_connected) & CLIENT_CONNECTED_BIT))
                 {
                     request_config();
@@ -1126,14 +970,11 @@ void task(void *param)
                     vTaskDelay(1000 / portTICK_PERIOD_MS); 
                 }
             }
-
             while (xEventGroupGetBits(client_writing_reading) & CLIENT_WRITING_READING_BIT)
             {
                 vTaskDelay(pdMS_TO_TICKS(100)); 
             }
-            printf("Received and written config\n");
-
-            
+            printf("Received and written config\n");            
             load_nvs();
             printf("------------------------------------------------------------\n");
             printf("Data recibida:\n");
@@ -1150,13 +991,7 @@ void task(void *param)
             printf("%s\n", config_instance.Ssid);
             printf("%s\n", config_instance.Pass);
             printf("------------------------------------------------------------\n");
-
-            
-            
-            
             make_header(&header_instance);
-
-            
             pMessage = malloc(header_instance.length * sizeof(uint8_t));
             generate_message(&header_instance, pMessage);
             printf("Message is:\n");
@@ -1165,33 +1000,21 @@ void task(void *param)
                 printf("%02X", pMessage[i]); 
             }
             printf("\n");
-
-            
             esp_err_t err = esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if,
                                                         gl_profile_tab[PROFILE_A_APP_ID].conn_id,
                                                         gl_profile_tab[PROFILE_A_APP_ID].char_handle,
                                                         header_instance.length, (uint8_t *)pMessage, false);
-
             if (err != ESP_OK)
             {
                 ESP_LOGE(GATTS_TAG, "Failed to send indicate: %s", esp_err_to_name(err));
             }
-
             vTaskDelay(5000 / portTICK_PERIOD_MS); 
-            
-            
-            
-            
-
-            
             header_instance.id = 0;
             header_instance.transport_layer = 0;
             header_instance.id_protocol = 0;
             header_instance.length = 0;
             free(pMessage);
             stop_config = false;
-
-            
             if (config_instance.status == 31)
             {
                 esp_err_t ret = esp_bluedroid_disable();
@@ -1199,13 +1022,11 @@ void task(void *param)
                 {
                     ESP_LOGE(GATTS_TAG, "Failed to disable Bluedroid: %s", esp_err_to_name(ret));
                 }
-
                 ret = esp_bt_controller_disable();
                 if (ret)
                 {
                     ESP_LOGE(GATTS_TAG, "Failed to disable Bluetooth controller: %s", esp_err_to_name(ret));
                 }
-
                 esp_sleep_enable_timer_wakeup(5000000); 
                 esp_deep_sleep_start();
             }
